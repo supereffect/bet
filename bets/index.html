@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ÇAF ÇAF MACHINE</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #ff7e5f, #feb47b, #86a8e7, #91e8e1);
+      background-size: 400% 400%;
+      animation: gradient-animation 15s ease infinite;
+      color: #333;
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    @keyframes gradient-animation {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    h1 {
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* YENİ: Bakiye Kutusu Stili */
+    #balance-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #333;
+      color: gold;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 1.5em;
+      font-weight: bold;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+      z-index: 20;
+      /* Üstte görünmesi için */
+    }
+
+    .slot-machine {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      z-index: 10;
+    }
+
+    .reel {
+      width: 150px;
+      height: 150px;
+      border: 8px solid gold;
+      border-radius: 15px;
+      background-color: #ff0000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .spin-container {
+      width: 100%;
+    }
+
+    .symbol {
+      width: 100%;
+      height: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #ffe5e5;
+    }
+
+    .symbol img {
+      width: 90%;
+      height: 90%;
+      object-fit: contain;
+    }
+
+    /* YENİ: Bahis Butonları İçin Kapsayıcı ve Stiller */
+    #bet-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .bet-button {
+      padding: 15px 25px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      background-color: #ff4757;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 5px #d1303e;
+      transition: all 0.1s;
+      z-index: 10;
+    }
+
+    /* Seçili Bahis Butonu Stili */
+    .bet-button.selected {
+      background-color: #1abc9c;
+      box-shadow: 0 5px #148f77;
+    }
+
+    .bet-button:hover:not(:disabled) {
+      background-color: #e83a48;
+    }
+
+    .bet-button:active:not(:disabled) {
+      box-shadow: 0 2px #d1303e;
+      transform: translateY(3px);
+    }
+
+    .bet-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      filter: grayscale(100%);
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 2em;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      color: #fff;
+      text-shadow: 1px 1px 3px #000;
+      z-index: 10;
+    }
+
+    /* Konfeti ve Yıldızlar için Ortak Stil */
+    .confetti,
+    .star {
+      position: absolute;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Konfeti CSS'i */
+    .confetti {
+      width: 10px;
+      height: 10px;
+      opacity: 0;
+      animation: confetti-fall 2s forwards ease-out;
+      border-radius: 50%;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translate(var(--x), var(--y)) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(var(--x-end), var(--y-end)) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* YILDIZ CSS'i */
+    .star {
+      color: yellow;
+      font-size: 15px;
+      text-shadow: 0 0 5px rgba(255, 255, 0, 0.8), 0 0 10px rgba(255, 255, 0, 0.6);
+      animation: pulse 0.5s infinite alternate, move-star 3s linear forwards;
+    }
+
+    @keyframes pulse {
+      from {
+        opacity: 0.8;
+        transform: scale(1);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes move-star {
+      0% {
+        transform: translate(var(--sx), var(--sy));
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(var(--ex), var(--ey));
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="balance-container">
+    Bakiye: <span id="current-balance">10000 TL</span>
+  </div>
+
+  <h1>ÇAF ÇAF MACHINE</h1>
+
+  <audio id="spinSound" src="sounds/spin.mp3" preload="auto"></audio>
+  <audio id="winSound" src="sounds/win.mp3" preload="auto"></audio>
+  <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
+
+  <div class="slot-machine">
+    <div class="reel" id="reel1">
+      <div class="spin-container"></div>
+    </div>
+    <div class="reel" id="reel2">
+      <div class="spin-container"></div>
+    </div>
+    <div class="reel" id="reel3">
+      <div class="spin-container"></div>
+    </div>
+  </div>
+
+  <div id="bet-buttons">
+    <button class="bet-button" data-bet="50">50 TL</button>
+    <button class="bet-button" data-bet="100">100 TL</button>
+    <button class="bet-button" data-bet="500">500 TL</button>
+    <button class="bet-button" data-bet="1000">1000 TL</button>
+  </div>
+
+  <p id="message">Lütfen bir bahis seçin ve döndürün!</p>
+
+  <script>
+    // --- AYARLAR ---
+    const WIN_CHANCE = 0.33; // Kazanma şansını biraz düşürdüm (daha gerçekçi olması için)
+    const WIN_MULTIPLIER = 2; // Kazanma durumunda bahsin 2 katı
+    const SYMBOL_HEIGHT = 150;
+    const VIRTUAL_SPIN_SYMBOLS = 30;
+    // ---------------
+
+    const symbols = [
+      { path: 'resimler/berke.png', name: 'Berke' },
+      { path: 'resimler/ozgur.png', name: 'Özgür' },
+      { path: 'resimler/berk.png', name: 'Berk' },
+    ];
+
+    // --- DOM Elementleri ---
+    const reelContainers = [
+      document.getElementById('reel1').querySelector('.spin-container'),
+      document.getElementById('reel2').querySelector('.spin-container'),
+      document.getElementById('reel3').querySelector('.spin-container')
+    ];
+    const betButtons = document.querySelectorAll('.bet-button');
+    const messageElement = document.getElementById('message');
+    const balanceElement = document.getElementById('current-balance');
+    const numReels = reelContainers.length;
+
+    const spinSound = document.getElementById('spinSound');
+    const winSound = document.getElementById('winSound');
+    const loseSound = document.getElementById('loseSound')
+    let starInterval;
+
+    // --- OYUN DURUMU ---
+    let currentBalance = 10000; // Başlangıç bakiyesi
+    let currentBet = 0; // Seçili bahis miktarı
+
+    // Bakiye göstergesini güncelleyen fonksiyon
+    function updateBalanceDisplay() {
+      if (currentBalance === 0) {
+    betButtons.forEach(btn => btn.disabled = true);
+    currentBet = 0;
+}
+      balanceElement.textContent = `${currentBalance.toFixed(2)} TL`;
+      // Bahis butonlarının aktif/pasif durumunu kontrol et
+      betButtons.forEach(button => {
+        const betAmount = parseInt(button.dataset.bet);
+        button.disabled = currentBalance < betAmount;
+      });
+
+      // Eğer seçili bahis artık yapılamıyorsa, bahsi sıfırla
+      if (currentBet > 0 && currentBet > currentBalance) {
+        currentBet = 0;
+        betButtons.forEach(btn => btn.classList.remove('selected'));
+        messageElement.textContent = `Bakiyeniz yeterli değil. Lütfen daha düşük bir bahis seçin.`;
+        messageElement.style.backgroundColor = 'rgba(255, 165, 0, 0.7)';
+      } else if (currentBet === 0) {
+        messageElement.textContent = 'Lütfen bir bahis seçin ve döndürün!';
+        messageElement.style.backgroundColor = 'transparent';
+      }
+
+      if (currentBalance <= 0) {
+        messageElement.textContent = 'OYUN BİTTİ! Yeniden oynamak için sayfayı yenileyin.';
+        messageElement.style.backgroundColor = 'rgba(150, 0, 0, 0.9)';
+        betButtons.forEach(btn => btn.disabled = true);
+      }
+    }
+
+    // --- Buton Etkileşimleri ---
+    betButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const betAmount = parseInt(button.dataset.bet);
+
+        if (betAmount > currentBalance) {
+          messageElement.textContent = 'Bu bahis için yeterli bakiyeniz yok!';
+          messageElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+          return;
+        }
+
+        // Seçili butonu işaretle
+        betButtons.forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+
+        currentBet = betAmount;
+        messageElement.textContent = `${currentBet} TL Bahis Seçildi. Hadi Başlayalım!`;
+        messageElement.style.backgroundColor = 'rgba(30, 144, 255, 0.7)';
+
+        // Bahis seçildiğinde döndürme fonksiyonunu çalıştır
+        spinReels();
+      });
+    });
+
+    // --- Slot Mekaniği Fonksiyonları ---
+
+    function getRandomSymbol() {
+      const randomIndex = Math.floor(Math.random() * symbols.length);
+      return symbols[randomIndex];
+    }
+
+    function createSymbolElement(symbol) {
+      const symbolDiv = document.createElement('div');
+      symbolDiv.classList.add('symbol');
+      const img = document.createElement('img');
+      img.src = symbol.path;
+      img.alt = symbol.name;
+      symbolDiv.appendChild(img);
+      return symbolDiv;
+    }
+
+    function initializeReelContent(container, finalSymbol) {
+      container.innerHTML = '';
+      container.style.transition = 'none';
+      container.style.transform = `translateY(0)`;
+
+      for (let i = 0; i < VIRTUAL_SPIN_SYMBOLS; i++) {
+        container.appendChild(createSymbolElement(getRandomSymbol()));
+      }
+      for (let i = 0; i < VIRTUAL_SPIN_SYMBOLS; i++) {
+        container.appendChild(createSymbolElement(getRandomSymbol()));
+      }
+
+      container.appendChild(createSymbolElement(finalSymbol));
+    }
+
+    function determineResults() {
+      // Bakiyeyi kontrol et, eğer currentBet sıfırsa hata mesajı ver
+      if (currentBet === 0) {
+        messageElement.textContent = 'Lütfen döndürmeden önce bir bahis seçin!';
+        messageElement.style.backgroundColor = 'rgba(255, 165, 0, 0.7)';
+        return null;
+      }
+
+      const shouldWin = Math.random() < WIN_CHANCE;
+      const finalResults = [];
+
+      if (shouldWin) {
+        const winningSymbol = getRandomSymbol();
+        for (let i = 0; i < numReels; i++) {
+          finalResults.push(winningSymbol);
+        }
+      } else {
+        finalResults.push(getRandomSymbol());
+
+        let secondSymbol = getRandomSymbol();
+        while (secondSymbol.name === finalResults[0].name) {
+          secondSymbol = getRandomSymbol();
+        }
+        finalResults.push(secondSymbol);
+
+        let thirdSymbol = getRandomSymbol();
+        if (finalResults[0].name === finalResults[1].name) {
+          while (thirdSymbol.name === finalResults[0].name) {
+            thirdSymbol = getRandomSymbol();
+          }
+        }
+        finalResults.push(thirdSymbol);
+      }
+      return finalResults;
+    }
+
+    let isSpinning = false;
+
+    function spinReels() {
+      if (isSpinning) return; // zaten dönüyorsa tekrar başlatma
+      if (currentBet === 0 || currentBet > currentBalance) {
+        updateBalanceDisplay();
+        return;
+      }
+      isSpinning = true;
+
+      // Tüm butonları devre dışı bırak
+      betButtons.forEach(btn => btn.disabled = true);
+      messageElement.textContent = 'Dönüyor...';
+      messageElement.style.backgroundColor = 'transparent';
+
+      // Bahis bakiyeden düşülür
+      currentBalance -= currentBet;
+      updateBalanceDisplay();
+
+      spinSound.currentTime = 0;
+      spinSound.play();
+
+      startStarEffect();
+
+      const finalDeterminedResults = determineResults();
+      let spinsCompleted = 0;
+
+      reelContainers.forEach((container, index) => {
+        const finalSymbolObject = finalDeterminedResults[index];
+        const spinDuration = 1000 + (index * 700);
+
+        initializeReelContent(container, finalSymbolObject);
+
+        const totalSymbols = VIRTUAL_SPIN_SYMBOLS + 1;
+        const targetPosition = - (totalSymbols * SYMBOL_HEIGHT) + SYMBOL_HEIGHT;
+
+        setTimeout(() => {
+          container.style.transition = `transform ${spinDuration / 1000}s cubic-bezier(0.2, 0.8, 0.7, 1)`;
+          container.style.transform = `translateY(${targetPosition}px)`;
+        }, 10);
+
+        setTimeout(() => {
+          container.style.transition = 'none';
+          container.innerHTML = '';
+          container.appendChild(createSymbolElement(finalSymbolObject));
+          container.style.transform = `translateY(0)`;
+
+          spinsCompleted++;
+
+          if (spinsCompleted === numReels) {
+    spinSound.pause();
+    stopStarEffect(); 
+    checkResult(finalDeterminedResults);
+
+    updateBalanceDisplay(); 
+    isSpinning = false; // spin bitti
+}
+        }, spinDuration + 50);
+      });
+    }
+
+    function checkResult(results) {
+      const symbolNames = results.map(r => r.name);
+      let winAmount = 0;
+
+      if (symbolNames[0] === symbolNames[1] && symbolNames[0] === symbolNames[2]) {
+        winSound.play();
+        const winnerName = symbolNames[0];
+        winAmount = currentBet * WIN_MULTIPLIER;
+        currentBalance += winAmount; // Kazancı ekle
+
+        let winMessage = `TEBRİKLER! ${currentBet} TL Bahis ile ${winAmount} TL Kazandınız!`;
+
+        if (winnerName === 'Berke') {
+          winMessage += ' BEBEĞİNİZ OLDU!';
+        } else if (winnerName === 'Özgür') {
+          winMessage += ' YILLIK İZİN KAZANDINIZ!';
+        } else if (winnerName === 'Berk') {
+          winMessage += ' DÜĞÜN BORCU KAZANDINIZ!';
+        } else {
+          winMessage = `BÜYÜK KAZANÇ! ${winAmount} TL! TEREYAĞ SÜREBİLİRSİN!`;
+        }
+
+        messageElement.textContent = winMessage;
+        messageElement.style.backgroundColor = 'rgba(0, 255, 0, 0.7)';
+        messageElement.style.color = 'black';
+
+        launchConfetti();
+      } else {
+        loseSound.play();
+        messageElement.textContent = ` ${currentBet} TL Kaybettiniz. Tekrar Deneyin.`;
+        messageElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+        messageElement.style.color = 'white';
+      }
+
+      // Kazanç/Kaybın ardından bakiye gösterimini güncelle
+      updateBalanceDisplay();
+    }
+
+    // --- Efekt Fonksiyonları (Değişmedi) ---
+    function createStar() {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      star.textContent = '★';
+
+      const startX = Math.random() * window.innerWidth;
+      const startY = Math.random() * 20;
+
+      const endX = startX + (Math.random() - 0.5) * 300;
+      const endY = window.innerHeight + 50;
+
+      star.style.left = `${startX}px`;
+      star.style.top = `${startY}px`;
+
+      star.style.setProperty('--sx', `0px`);
+      star.style.setProperty('--sy', `0px`);
+      star.style.setProperty('--ex', `${endX - startX}px`);
+      star.style.setProperty('--ey', `${endY - startY}px`);
+
+      document.body.appendChild(star);
+
+      setTimeout(() => {
+        star.remove();
+      }, 3000);
+    }
+
+    function startStarEffect() {
+      starInterval = setInterval(createStar, 100);
+    }
+
+    function stopStarEffect() {
+      clearInterval(starInterval);
+    }
+
+    function launchConfetti() {
+      const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'];
+      const numConfetti = 100;
+
+      for (let i = 0; i < numConfetti; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+        const startX = Math.random() * window.innerWidth;
+        const startY = Math.random() * window.innerHeight;
+
+        const endX = startX + (Math.random() - 0.5) * 600;
+        const endY = startY + (Math.random() * 400 + 200);
+
+        confetti.style.left = `${startX}px`;
+        confetti.style.top = `${startY}px`;
+
+        confetti.style.setProperty('--x', `0px`);
+        confetti.style.setProperty('--y', `0px`);
+        confetti.style.setProperty('--x-end', `${endX - startX}px`);
+        confetti.style.setProperty('--y-end', `${endY - startY}px`);
+
+        confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+        confetti.style.animationDuration = `${2 + Math.random() * 1.5}s`;
+
+        document.body.appendChild(confetti);
+
+        confetti.addEventListener('animationend', () => {
+          confetti.remove();
+        });
+      }
+    }
+
+    // --- Başlangıç Ayarları ---
+
+    // Başlangıçta makaralara rastgele bir resim ata
+    reelContainers.forEach(container => {
+      container.innerHTML = '';
+      container.appendChild(createSymbolElement(getRandomSymbol()));
+    });
+
+    // Başlangıçta bakiye gösterimini ayarla ve butonları kontrol et
+    updateBalanceDisplay(); 
+  </script>
+</body>
+
+</html>
